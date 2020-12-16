@@ -1,0 +1,31 @@
+<launch>
+     <node name="orb_slam3_rgbdi" pkg="ORB_SLAM3" type="RGBD_inertial" output="screen">
+          <remap from="/camera/rgb/image_raw" to="/camera/color/image_rect_color" />
+          <remap from="/camera/depth_registered/image_raw" to="/camera/depth/image_rect_raw" />
+
+          <param name="publish_pointcloud" type="bool" value="true" />
+          <param name="publish_pose" type="bool" value="true" />
+          <param name="localize_only" type="bool" value="false" />
+          <param name="reset_map" type="bool" value="false" />
+
+          <!-- static parameters -->
+          <param name="load_map" type="bool" value="false" />
+          <param name="map_file" type="string" value="map.bin" />
+          <param name="voc_file" type="string" value="/home/hunter/libraries/ORB_SLAM3/Vocabulary/ORBvoc.bin" />
+
+          <param name="pointcloud_frame_id" type="string" value="map" />
+          <param name="camera_frame_id" type="string" value="camera_link" />
+          <param name="min_num_kf_in_map" type="int" value="5" />
+
+          <!-- ORB parameters -->
+          <param name="/ORBextractor/nFeatures" type="int" value="1000" />
+          <param name="/ORBextractor/scaleFactor" type="double" value="1.2" />
+          <param name="/ORBextractor/nLevels" type="int" value="8" />
+          <param name="/ORBextractor/iniThFAST" type="int" value="20" />
+          <param name="/ORBextractor/minThFAST" type="int" value="7" />
+
+          <!-- Camera calibration parameters -->
+          <!--If the node should wait for a camera_info topic to take the camera calibration data-->
+          <param name="load_calibration_from_cam" type="bool" value="false" />
+     </node>
+</launch>

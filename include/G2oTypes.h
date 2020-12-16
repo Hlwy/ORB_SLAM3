@@ -681,6 +681,15 @@ public:
         _error = VA2->estimate()-VA1->estimate();
     }
 
+	/** ORBSLAM3_RGBD_INERTIAL had
+	void computeError(){
+        const VertexGyroBias* VG1= static_cast<const VertexGyroBias*>(_vertices[0]);
+        const VertexGyroBias* VG2= static_cast<const VertexGyroBias*>(_vertices[1]);
+        _error = VG2->estimate()-VG1->estimate();
+    }
+	*/
+
+
     virtual void linearizeOplus(){
         _jacobianOplusXi = -Eigen::Matrix3d::Identity();
         _jacobianOplusXj.setIdentity();

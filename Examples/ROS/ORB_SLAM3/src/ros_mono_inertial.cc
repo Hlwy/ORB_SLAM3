@@ -29,7 +29,10 @@
 #include<cv_bridge/cv_bridge.h>
 #include<sensor_msgs/Imu.h>
 
+#include <opencv2/opencv.hpp>
 #include<opencv2/core/core.hpp>
+#include <std_msgs/Header.h>
+#include <sensor_msgs/Imu.h>
 
 #include"../../../include/System.h"
 #include"../include/ImuTypes.h"

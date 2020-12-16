@@ -11,6 +11,7 @@ MESSAGE("Build type: " ${ROS_BUILD_TYPE})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -O3 -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 
 # Check C++11 or C++0x support
 include(CheckCXXCompilerFlag)
@@ -30,7 +31,10 @@ endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../../cmake_modules)
 
-find_package(OpenCV 3.0 QUIET)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+find_package(OpenCV 4.2 REQUIRED QUIET)
 if(NOT OpenCV_FOUND)
    find_package(OpenCV 2.4.3 QUIET)
    if(NOT OpenCV_FOUND)
@@ -46,6 +50,7 @@ ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/../../../
 ${PROJECT_SOURCE_DIR}/../../../include
 ${PROJECT_SOURCE_DIR}/../../../include/CameraModels
+${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 )
 
@@ -56,8 +61,8 @@ ${Pangolin_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/../../../Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/../../../Thirdparty/g2o/lib/libg2o.so
 ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM3.so
--lboost_system
-)
+/usr/lib/x86_64-linux-gnu/libboost_system.so
+/usr/lib/x86_64-linux-gnu/libboost_filesystem.so
 
 # Node for monocular camera
 rosbuild_add_executable(Mono
@@ -94,6 +99,15 @@ src/ros_rgbd.cc
 )
 
 target_link_libraries(RGBD
+${LIBS}
+)
+
+# Node for RGBD and inertial camera
+rosbuild_add_executable(RGBD_Inertial
+src/ros_rgbd_inertial.cc
+)
+
+target_link_libraries(RGBD_Inertial
 ${LIBS}
 )
 
