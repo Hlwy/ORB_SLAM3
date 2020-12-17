@@ -337,7 +337,6 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
         mbInitialComputations=false;
     }
 
-
     mb = mbf/fx;
 
     //Set no stereo fisheye information

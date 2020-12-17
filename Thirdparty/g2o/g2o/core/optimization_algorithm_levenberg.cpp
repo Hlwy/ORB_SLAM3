@@ -44,11 +44,11 @@ namespace g2o {
     OptimizationAlgorithmWithHessian(solver)
   {
     _currentLambda = -1.;
-    _tau = 1e-5; // ORB_SLAM3 had 1e-5 ---- ORB_SLAM3-RGBD-Inertial had  1e-50
+    _tau = 1e-50; // ORB_SLAM3 had 1e-5 ---- ORB_SLAM3-RGBD-Inertial had  1e-50
     _goodStepUpperScale = 2./3.;
     _goodStepLowerScale = 1./3.;
     _userLambdaInit = _properties.makeProperty<Property<double> >("initialLambda", 0.);
-    _maxTrialsAfterFailure = _properties.makeProperty<Property<int> >("maxTrialsAfterFailure", 10); //  ORB_SLAM3 had 10 iterations ----  ORB_SLAM3-RGBD had 100 iterations
+    _maxTrialsAfterFailure = _properties.makeProperty<Property<int> >("maxTrialsAfterFailure", 100); //  ORB_SLAM3 had 10 iterations ----  ORB_SLAM3-RGBD had 100 iterations
     _ni=2.;
     _levenbergIterations = 0;
     _nBad = 0;

@@ -3888,6 +3888,8 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches1, g2o::Sim3 &g2oS12, const float th2,
                             const bool bFixScale, Eigen::Matrix<double,7,7> &mAcumHessian, const bool bAllPoints)
 {
+    // bool bShowImages = false; // ADDED FROM ORB_SLAM3_RGBD_INERTIAL
+
     g2o::SparseOptimizer optimizer;
     g2o::BlockSolverX::LinearSolverType * linearSolver;
 
@@ -3897,6 +3899,11 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
     optimizer.setAlgorithm(solver);
+
+    /** ADDED FROM ORB_SLAM3_RGBD_INERTIAL
+    const cv::Mat &K1 = pKF1->mK;
+    const cv::Mat &K2 = pKF2->mK;
+	*/
 
     // Camera poses
     const cv::Mat R1w = pKF1->GetRotation();
@@ -3926,7 +3933,17 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     vpEdges12.reserve(2*N);
     vpEdges21.reserve(2*N);
     vbIsInKF2.reserve(2*N);
+	/** ADDED FROM ORB_SLAM3_RGBD_INERTIAL
+    float cx1 = K1.at<float>(0,2);
+    float cy1 = K1.at<float>(1,2);
+    float fx1 = K1.at<float>(0,0);
+    float fy1 = K1.at<float>(1,1);
 
+    float cx2 = K2.at<float>(0,2);
+    float cy2 = K2.at<float>(1,2);
+    float fx2 = K2.at<float>(0,0);
+    float fy2 = K2.at<float>(1,1);
+	*/
     const float deltaHuber = sqrt(th2);
 
     int nCorrespondences = 0;
@@ -3935,6 +3952,12 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     int nOutKF2 = 0;
     int nMatchWithoutMP = 0;
 
+	/** ADDED FROM ORB_SLAM3_RGBD_INERTIAL
+    cv::Mat img1 = cv::imread(pKF1->mNameFile, CV_LOAD_IMAGE_UNCHANGED);
+    cv::cvtColor(img1, img1, CV_GRAY2BGR);
+    cv::Mat img2 = cv::imread(pKF2->mNameFile, CV_LOAD_IMAGE_UNCHANGED);
+    cv::cvtColor(img2, img2, CV_GRAY2BGR);
+	*/
     vector<int> vIdsOnlyInKF2;
 
     for(int i=0; i<N; i++)
@@ -3999,6 +4022,9 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
                 vIdsOnlyInKF2.push_back(id2);
             }
+
+           //  cv::circle(img1, pKF1->mvKeys[i].pt, 1, cv::Scalar(0, 0, 255)); // ADDED FROM ORB_SLAM3_RGBD_INERTIAL
+
             continue;
         }
 
@@ -4023,6 +4049,24 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
         ORB_SLAM3::EdgeSim3ProjectXYZ* e12 = new ORB_SLAM3::EdgeSim3ProjectXYZ();
 
+	/** ADDED FROM ORB_SLAM3_RGBD_INERTIAL
+        if(bShowImages) //TODO test to project the matched points in the image
+        {
+            cv::circle(img1, pKF1->mvKeys[i].pt, 1, cv::Scalar(0, 255, 0));
+
+            Eigen::Matrix<double,3,1> eigP3D2c = Converter::toVector3d(P3D2c);
+            Eigen::Matrix<double,3,1> eigP3D1c = g2oS12.map(eigP3D2c);
+            cv::Mat cvP3D1c = Converter::toCvMat(eigP3D1c);
+
+            float invz = 1/cvP3D1c.at<float>(2);
+            float x = fx1 * cvP3D1c.at<float>(0)*invz + cx1;
+            float y = fy1 * cvP3D1c.at<float>(1)*invz + cy1;
+
+            cv::Point2f ptProjPoint(x, y);
+            cv::line(img1, pKF1->mvKeys[i].pt, ptProjPoint, cv::Scalar(255, 0, 0), 1);
+        }
+	*/
+
         e12->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id2)));
         e12->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
         e12->setMeasurement(obs1);
@@ -4045,6 +4089,11 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
             inKF2 = true;
 
             nInKF2++;
+	/** ADDED FROM ORB_SLAM3_RGBD_INERTIAL
+            if(bShowImages)
+            {
+                cv::circle(img2, pKF2->mvKeys[i2].pt, 1, cv::Scalar(0, 255, 0));
+            }*/
         }
         else
         {
@@ -4057,6 +4106,28 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
             inKF2 = false;
             nOutKF2++;
+			/** ADDED FROM ORB_SLAM3_RGBD_INERTIAL
+            if(bShowImages)
+            {
+                cv::circle(img2, kpUn2.pt, 1, cv::Scalar(0, 0, 255));
+            }
+        }
+
+        {
+            Eigen::Matrix<double,3,1> eigP3D1c = Converter::toVector3d(P3D1c);
+            Eigen::Matrix<double,3,1> eigP3D2c = g2oS12.inverse().map(eigP3D1c);
+            cv::Mat cvP3D2c = Converter::toCvMat(eigP3D2c);
+
+            float invz = 1/cvP3D2c.at<float>(2);
+            float x = fx2 * cvP3D2c.at<float>(0)*invz + cx2;
+            float y = fy2 * cvP3D2c.at<float>(1)*invz + cy2;
+
+            if(bShowImages)
+            {
+                cv::Point2f ptProjPoint(x, y);
+                cv::line(img2, kpUn2.pt, ptProjPoint, cv::Scalar(255, 0, 0), 1);
+            }
+	*/
         }
 
         ORB_SLAM3::EdgeInverseSim3ProjectXYZ* e21 = new ORB_SLAM3::EdgeInverseSim3ProjectXYZ();
@@ -4116,6 +4187,15 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
         e12->setRobustKernel(0);
         e21->setRobustKernel(0);
     }
+	/** ADDED FROM ORB_SLAM3_RGBD_INERTIAL
+    if(bShowImages)
+    {
+        string pathImg1 = "./test_OptSim3/KF_" + to_string(pKF1->mnId) + "_Main.jpg";
+        cv::imwrite(pathImg1, img1);
+        string pathImg2 = "./test_OptSim3/KF_" + to_string(pKF1->mnId) + "_Matched.jpg";
+        cv::imwrite(pathImg2, img2);
+    }
+*/
 
     Verbose::PrintMess("Sim3: First Opt -> Correspondences: " + to_string(nCorrespondences) + "; nBad: " + to_string(nBad) + "; nBadOutKF2: " + to_string(nBadOutKF2), Verbose::VERBOSITY_DEBUG);
 
